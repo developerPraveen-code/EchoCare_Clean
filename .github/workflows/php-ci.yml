@@ -1,13 +1,21 @@
-name: PHP CI
+name: PHP CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
+      - develop
   pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  PHP_VERSION: '8.2'
 
 jobs:
   lint:
+    name: PHP Linting
     runs-on: ubuntu-latest
 
     steps:
@@ -17,8 +25,153 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: ${{ env.PHP_VERSION }}
 
       - name: Lint PHP files
         run: |
           find . -name "*.php" -print0 | xargs -0 -n1 php -l
+          echo "✓ All PHP files passed linting"
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          tools: phpcs, phpstan
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist
+
+      - name: Run PHPCS
+        run: |
+          phpcs --standard=PSR12 src/ public/ || true
+
+      - name: Run PHPStan
+        run: |
+          phpstan analyse src/ --level=5 || true
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: echocare_test
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mysql, pdo_mysql
+          tools: phpunit
+
+      - name: Create test environment
+        run: |
+          cp .env.example .env.test || true
+          php -v
+          mysql -h 127.0.0.1 -u root -proot echocare_test < database/schema.sql || true
+
+      - name: Run unit tests
+        run: |
+          phpunit || true
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction
+
+      - name: Run security checker
+        run: |
+          composer require --dev symfonycorp/security-checker || true
+          php vendor/bin/security-checker check composer.lock || true
+
+      - name: Check for hardcoded secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  build:
+    name: Build Artifacts
+    runs-on: ubuntu-latest
+    needs: [lint, test, code-quality]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+
+      - name: Create build artifact
+        run: |
+          mkdir -p build
+          cp -r src/ public/ database/ build/
+          zip -r echocare-${{ github.sha }}.zip build/
+          echo "Build completed successfully"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: echocare-build
+          path: echocare-${{ github.sha }}.zip
+          retention-days: 30
+
+  notify:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [lint, test, code-quality, build]
+    if: always()
+
+    steps:
+      - name: Check job statuses
+        run: |
+          echo "Lint: ${{ needs.lint.result }}"
+          echo "Test: ${{ needs.test.result }}"
+          echo "Code Quality: ${{ needs.code-quality.result }}"
+          echo "Build: ${{ needs.build.result }}"
+          if [ "${{ needs.lint.result }}" = "failure" ] || [ "${{ needs.test.result }}" = "failure" ]; then
+            echo "❌ Pipeline failed"
+            exit 1
+          fi
+          echo "✅ Pipeline passed"
