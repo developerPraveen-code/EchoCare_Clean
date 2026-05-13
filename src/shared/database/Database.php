@@ -8,10 +8,18 @@
 
 class Database
 {
-    private string $host = 'localhost';
-    private string $database = 'echocare_db';
-    private string $username = 'root';
-    private string $password = '';
+    private string $host;
+    private string $database;
+    private string $username;
+    private string $password;
+
+    public function __construct()
+    {
+        $this->host = $_ENV['DB_HOST'] ?? 'localhost';
+        $this->database = $_ENV['DB_NAME'] ?? 'echocare_db';
+        $this->username = $_ENV['DB_USER'] ?? 'root';
+        $this->password = $_ENV['DB_PASS'] ?? '';
+    }
 
     public function connect(): PDO
     {

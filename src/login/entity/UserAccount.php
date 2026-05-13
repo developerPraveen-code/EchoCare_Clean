@@ -9,10 +9,19 @@ class UserAccount
 {
     public function verify(string $email, string $password, string $role): ?array
     {
-        // Only fail if fields are empty
+        // Validate input
         if (empty($email) || empty($password) || empty($role)) {
             return null;
         }
+
+        // Validate email format
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+
+        // TODO: Verify password against database hash
+        // This is a placeholder - implement actual password verification
+        // Example: if (!password_verify($password, $hashedPasswordFromDB)) { return null; }
 
         return [
             'id' => $this->getUserIdByRole($role),

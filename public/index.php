@@ -4,7 +4,20 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-$page = $_GET['page'] ?? 'login';
+// Validate page parameter - only allow whitelisted pages
+$allowedPages = [
+    'login', 'login_process', 'logout',
+    'admin_dashboard', 'donee_dashboard', 'fundraiser_dashboard', 'platform_manager_dashboard',
+    'create_fra', 'view_my_fra', 'edit_fra', 'disable_fra', 'search_my_fra', 'search_all_fra',
+    'view_fra_details', 'save_favorite', 'view_saved_fra', 'search_favorite_fra',
+    'view_posted_views', 'view_shortlist_count', 'search_completed_history', 'view_completed_history',
+    'search_donation_history', 'view_donation_history',
+    'view_category', 'create_fra_category', 'search_category', 'suspend_category', 'update_category',
+    'create_user_profile', 'view_user_profiles', 'view_user_profile', 'update_user_profile',
+    'daily_report', 'weekly_report', 'monthly_report'
+];
+
+$page = isset($_GET['page']) && in_array($_GET['page'], $allowedPages, true) ? $_GET['page'] : 'login';
 
 switch ($page) {
 
