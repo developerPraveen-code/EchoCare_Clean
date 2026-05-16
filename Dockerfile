@@ -20,9 +20,7 @@ RUN composer install --no-dev --optimize-autoloader || true
 COPY public/ ./public/
 COPY src/ ./src/
 COPY database/ ./database/
-
-# Copy .env file (create if doesn't exist)
-COPY .env.example .env || true
+COPY .env.example .env
 
 # Set Apache document root to public/
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
