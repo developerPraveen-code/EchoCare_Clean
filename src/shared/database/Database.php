@@ -3,39 +3,35 @@
 // SHARED DATABASE CONNECTION
 // BCE Support Role: Database helper
 // Purpose: Provides MySQL connection for persistent storage.
-// Current prototype may still use PHP session data for demo stability,
-// but this file shows how Entity classes can connect to MySQL.
 
 class Database
 {
-    private string $host;
-    private string $database;
-    private string $username;
-    private string $password;
+    private string $host = 'localhost';
+    private string $database = 'echocare_db';
+    private string $username = 'root';
+    private string $password = '';
 
-    public function __construct()
-    {
-        $this->host = $_ENV['DB_HOST'] ?? 'localhost';
-        $this->database = $_ENV['DB_NAME'] ?? 'echocare_db';
-        $this->username = $_ENV['DB_USER'] ?? 'root';
-        $this->password = $_ENV['DB_PASS'] ?? '';
-    }
+    private ?PDO $conn = null;
 
     public function connect(): PDO
     {
-        try {
-            $pdo = new PDO(
-                "mysql:host={$this->host};dbname={$this->database};charset=utf8mb4",
-                $this->username,
-                $this->password
-            );
+        if ($this->conn === null) {
 
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            try {
+                $this->conn = new PDO(
+                    "mysql:host={$this->host};dbname={$this->database};charset=utf8mb4",
+                    $this->username,
+                    $this->password
+                );
 
-            return $pdo;
+                $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-        } catch (PDOException $e) {
-            die('Database connection failed: ' . $e->getMessage());
+            } catch (PDOException $e) {
+                die('Database connection failed: ' . $e->getMessage());
+            }
         }
+
+        return $this->conn;
     }
 }

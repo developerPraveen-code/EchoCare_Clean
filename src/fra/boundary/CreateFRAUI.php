@@ -1,10 +1,7 @@
-require_once __DIR__ . '/../../login/entity/UserSession.php';
-
-$userSession = new UserSession();
-$userSession->requireLogin();
-
 <?php
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
+require_once __DIR__ . '/../controller/CreateFRAController.php';
 
 $userSession = new UserSession();
 $userSession->requireLogin();
@@ -13,18 +10,11 @@ if ($_SESSION['user']['role'] !== 'fundraiser') {
     header('Location: /index.php?page=login');
     exit();
 }
-?>
-
-<?php
-
-require_once __DIR__ . '/../controller/CreateFRAController.php';
 
 $controller = new CreateFRAController();
-
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
     $message = $controller->createFRA(
         $_SESSION['user']['id'],
         $_POST['title'],
@@ -33,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['category']
     );
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -51,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php if ($message): ?>
 <div class="success-message">
-    <?= $message ?>
+    <?= htmlspecialchars($message) ?>
 </div>
 <?php endif; ?>
 
@@ -69,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="form-group">
 <label>Goal Amount</label>
-<input type="number" name="goalAmount" required>
+<input type="number" name="goalAmount" step="0.01" required>
 </div>
 
 <div class="form-group">

@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
+require_once __DIR__ . '/../controller/SearchAllFRAController.php';
 
 $userSession = new UserSession();
 $userSession->requireLogin();
@@ -8,22 +10,12 @@ if ($_SESSION['user']['role'] !== 'donee') {
     header('Location: /index.php?page=login');
     exit();
 }
-?>
-
-<?php
-
-require_once __DIR__ . '/../controller/SearchAllFRAController.php';
 
 $controller = new SearchAllFRAController();
 
-$results = [];
+$keyword = $_POST['keyword'] ?? '';
+$results = $controller->searchAllFRA($keyword);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $results = $controller->searchAllFRA(
-        $_POST['keyword']
-    );
-}
 ?>
 
 <!DOCTYPE html>
@@ -41,29 +33,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <h1>Search All FRA</h1>
 
+<?php if (($_GET['message'] ?? '') === 'saved'): ?>
+    <div class="success-message">
+        Fundraising activity saved successfully.
+    </div>
+<?php elseif (($_GET['message'] ?? '') === 'already_saved'): ?>
+    <div class="success-message">
+        This fundraising activity has already been saved.
+    </div>
+<?php endif; ?>
+
 <form method="POST">
 
 <div class="form-group">
 <label>Keyword</label>
-<input type="text" name="keyword">
+<input type="text" name="keyword" value="<?= htmlspecialchars($keyword) ?>">
 </div>
 
-<button class="btn-primary">
+<button class="btn-primary" type="submit">
 Search
 </button>
 
 </form>
 
+<?php if (empty($results)): ?>
+
+<p>No fundraising activities found.</p>
+
+<?php else: ?>
+
 <table class="table">
+<tr>
+<th>Title</th>
+<th>Category</th>
+<th>Goal Amount</th>
+<th>Amount Raised</th>
+<th>Action</th>
+</tr>
 
 <?php foreach ($results as $fra): ?>
 
 <tr>
-
 <td><?= htmlspecialchars($fra['title']) ?></td>
+<td><?= htmlspecialchars($fra['category']) ?></td>
+<td>$<?= number_format((float)$fra['goalAmount'], 2) ?></td>
+<td>$<?= number_format((float)$fra['amountRaised'], 2) ?></td>
 
 <td>
-
 <a class="action-link"
 href="/index.php?page=view_fra_details&fraId=<?= $fra['fraId'] ?>">
 View
@@ -73,19 +89,18 @@ View
 
 <a class="action-link"
 href="/index.php?page=save_favorite&fraId=<?= $fra['fraId'] ?>">
-Save
+Save to Favorites
 </a>
-
 </td>
-
 </tr>
 
 <?php endforeach; ?>
 
 </table>
 
-<a href="/index.php?page=donee_dashboard"
-class="secondary-btn">
+<?php endif; ?>
+
+<a href="/index.php?page=donee_dashboard" class="secondary-btn">
 Back
 </a>
 

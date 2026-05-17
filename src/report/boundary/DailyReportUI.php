@@ -3,7 +3,7 @@
 // USER STORY #44: Generate Daily Report
 // BCE Role: Boundary
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/DailyReportController.php';
 
 $userSession = new UserSession();

@@ -1,46 +1,57 @@
 <?php
 
-// USER STORY: Generate/View Monthly Report
+// USER STORY #46: Generate Monthly Report
 // BCE Role: Entity
+
+require_once __DIR__ . '/../../shared/database/Database.php';
 
 class MonthlyReport
 {
-    public function generateReport(): array
+    private PDO $conn;
+
+    public function __construct()
     {
-        $fraList = $_SESSION['fra_list'] ?? [];
-        $donationList = $_SESSION['donation_list'] ?? [];
+        $database = new Database();
+        $this->conn = $database->connect();
+    }
 
-        $totalFundsRaised = 0;
-        $completedFRA = 0;
+    public function generateReport(int $month, int $year): array
+    {
+        $donationSql = "SELECT 
+                            COUNT(*) AS totalDonations,
+                            COALESCE(SUM(amount), 0) AS totalFundsRaised,
+                            COALESCE(AVG(amount), 0) AS averageDonation
+                        FROM donations
+                        WHERE MONTH(donation_date) = :month
+                        AND YEAR(donation_date) = :year";
 
-        foreach ($fraList as $fra) {
-            $totalFundsRaised += $fra['amountRaised'] ?? 0;
+        $donationStmt = $this->conn->prepare($donationSql);
+        $donationStmt->bindParam(':month', $month, PDO::PARAM_INT);
+        $donationStmt->bindParam(':year', $year, PDO::PARAM_INT);
+        $donationStmt->execute();
 
-            if (($fra['status'] ?? '') === 'Completed') {
-                $completedFRA++;
-            }
-        }
+        $donationData = $donationStmt->fetch(PDO::FETCH_ASSOC);
 
-        $totalDonations = count($donationList);
-        $averageDonation = 0;
+        $fraSql = "SELECT COUNT(*) AS completedFRA
+                   FROM fundraising_activities
+                   WHERE status = 'Completed'
+                   AND MONTH(end_date) = :month
+                   AND YEAR(end_date) = :year";
 
-        if ($totalDonations > 0) {
-            $sum = 0;
+        $fraStmt = $this->conn->prepare($fraSql);
+        $fraStmt->bindParam(':month', $month, PDO::PARAM_INT);
+        $fraStmt->bindParam(':year', $year, PDO::PARAM_INT);
+        $fraStmt->execute();
 
-            foreach ($donationList as $donation) {
-                $sum += $donation['amount'] ?? 0;
-            }
-
-            $averageDonation = $sum / $totalDonations;
-        }
+        $fraData = $fraStmt->fetch(PDO::FETCH_ASSOC);
 
         return [
-            'month' => date('F'),
-            'year' => date('Y'),
-            'totalFundsRaised' => $totalFundsRaised,
-            'totalDonations' => $totalDonations,
-            'completedFRA' => $completedFRA,
-            'averageDonation' => $averageDonation
+            'month' => date('F', mktime(0, 0, 0, $month, 1)),
+            'year' => $year,
+            'totalFundsRaised' => (float)$donationData['totalFundsRaised'],
+            'totalDonations' => (int)$donationData['totalDonations'],
+            'completedFRA' => (int)$fraData['completedFRA'],
+            'averageDonation' => round((float)$donationData['averageDonation'], 2)
         ];
     }
 }

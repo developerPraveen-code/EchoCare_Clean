@@ -4,7 +4,7 @@
 // BCE Role: Boundary
 // Allows Fundraiser to view number of views for each posted FRA.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/ViewPostedViewsController.php';
 
 $userSession = new UserSession();

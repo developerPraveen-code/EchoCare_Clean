@@ -1,84 +1,138 @@
 <?php
 
+// BCE Role: Entity
+// Entity only communicates with database. No $_SESSION is used here.
+
+require_once __DIR__ . '/../../shared/database/Database.php';
+
 class FundraisingActivity
 {
-    public function initialiseData(): void
+    private PDO $conn;
+
+    public function __construct()
     {
-        if (!isset($_SESSION['fra_list'])) {
-            $_SESSION['fra_list'] = [];
-        }
+        $database = new Database();
+        $this->conn = $database->connect();
     }
 
     public function createFRA(int $fundraiserId, string $title, string $description, float $goalAmount, string $category): string
     {
-        $this->initialiseData();
+        $sql = "INSERT INTO fundraising_activities
+                    (fundraiser_id, title, description, goal_amount, current_amount, category, status, start_date, end_date, view_count, shortlist_count)
+                VALUES
+                    (:fundraiserId, :title, :description, :goalAmount, 0, :category, 'Active', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 0, 0)";
 
-        $newId = empty($_SESSION['fra_list'])
-            ? 1
-            : max(array_column($_SESSION['fra_list'], 'fraId')) + 1;
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fundraiserId', $fundraiserId, PDO::PARAM_INT);
+        $stmt->bindParam(':title', $title);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':goalAmount', $goalAmount);
+        $stmt->bindParam(':category', $category);
 
-        $_SESSION['fra_list'][] = [
-            'fraId' => $newId,
-            'fundraiserId' => $fundraiserId,
-            'title' => $title,
-            'description' => $description,
-            'goalAmount' => $goalAmount,
-            'amountRaised' => 0,
-            'category' => $category,
-            'status' => 'Active',
-            'startDate' => date('Y-m-d'),
-            'endDate' => date('Y-m-d', strtotime('+30 days')),
-            'views' => 0,
-            'shortlistCount' => 0
-        ];
-
-        return 'FRA created successfully.';
+        return $stmt->execute()
+            ? 'FRA created successfully.'
+            : 'FRA creation failed.';
     }
 
     public function getFRAList(int $fundraiserId): array
     {
-        $this->initialiseData();
+        $sql = "SELECT 
+                    fra_id AS fraId,
+                    fundraiser_id AS fundraiserId,
+                    title,
+                    description,
+                    goal_amount AS goalAmount,
+                    current_amount AS amountRaised,
+                    category,
+                    status,
+                    start_date AS startDate,
+                    end_date AS endDate,
+                    view_count AS views,
+                    shortlist_count AS shortlistCount
+                FROM fundraising_activities
+                WHERE fundraiser_id = :fundraiserId
+                ORDER BY fra_id DESC";
 
-        return array_values(array_filter($_SESSION['fra_list'], fn($fra) =>
-            $fra['fundraiserId'] === $fundraiserId
-        ));
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fundraiserId', $fundraiserId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getAllFRA(): array
     {
-        $this->initialiseData();
+        $sql = "SELECT 
+                    fra_id AS fraId,
+                    fundraiser_id AS fundraiserId,
+                    title,
+                    description,
+                    goal_amount AS goalAmount,
+                    current_amount AS amountRaised,
+                    category,
+                    status,
+                    start_date AS startDate,
+                    end_date AS endDate,
+                    view_count AS views,
+                    shortlist_count AS shortlistCount
+                FROM fundraising_activities
+                WHERE status = 'Active'
+                ORDER BY fra_id DESC";
 
-        return array_values(array_filter($_SESSION['fra_list'], fn($fra) =>
-            $fra['status'] === 'Active'
-        ));
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getFRA(int $fraId): ?array
     {
-        $this->initialiseData();
+        $this->increaseViewCount($fraId);
 
-        foreach ($_SESSION['fra_list'] as &$fra) {
-            if ($fra['fraId'] === $fraId) {
-                $fra['views']++;
-                return $fra;
-            }
-        }
+        $sql = "SELECT 
+                    fra_id AS fraId,
+                    fundraiser_id AS fundraiserId,
+                    title,
+                    description,
+                    goal_amount AS goalAmount,
+                    current_amount AS amountRaised,
+                    category,
+                    status,
+                    start_date AS startDate,
+                    end_date AS endDate,
+                    view_count AS views,
+                    shortlist_count AS shortlistCount
+                FROM fundraising_activities
+                WHERE fra_id = :fraId
+                LIMIT 1";
 
-        return null;
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fraId', $fraId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $fra = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $fra ?: null;
     }
 
     public function updateFRA(int $fraId, string $title, string $description, float $goalAmount, string $status): ?array
     {
-        $this->initialiseData();
+        $sql = "UPDATE fundraising_activities
+                SET title = :title,
+                    description = :description,
+                    goal_amount = :goalAmount,
+                    status = :status
+                WHERE fra_id = :fraId";
 
-        foreach ($_SESSION['fra_list'] as &$fra) {
-            if ($fra['fraId'] === $fraId) {
-                $fra['title'] = $title;
-                $fra['description'] = $description;
-                $fra['goalAmount'] = $goalAmount;
-                $fra['status'] = $status;
-                return $fra;
-            }
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':title', $title);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':goalAmount', $goalAmount);
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':fraId', $fraId, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            return $this->getFRA($fraId);
         }
 
         return null;
@@ -86,13 +140,15 @@ class FundraisingActivity
 
     public function disableFRA(int $fraId): ?array
     {
-        $this->initialiseData();
+        $sql = "UPDATE fundraising_activities
+                SET status = 'Disabled'
+                WHERE fra_id = :fraId";
 
-        foreach ($_SESSION['fra_list'] as &$fra) {
-            if ($fra['fraId'] === $fraId) {
-                $fra['status'] = 'Disabled';
-                return $fra;
-            }
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fraId', $fraId, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            return $this->getFRA($fraId);
         }
 
         return null;
@@ -100,76 +156,168 @@ class FundraisingActivity
 
     public function searchMyFRA(int $fundraiserId, string $keyword): array
     {
-        $this->initialiseData();
+        $sql = "SELECT 
+                    fra_id AS fraId,
+                    fundraiser_id AS fundraiserId,
+                    title,
+                    description,
+                    goal_amount AS goalAmount,
+                    current_amount AS amountRaised,
+                    category,
+                    status,
+                    start_date AS startDate,
+                    end_date AS endDate,
+                    view_count AS views,
+                    shortlist_count AS shortlistCount
+                FROM fundraising_activities
+                WHERE fundraiser_id = :fundraiserId
+                AND (
+                    title LIKE :keyword
+                    OR description LIKE :keyword
+                    OR category LIKE :keyword
+                )
+                ORDER BY fra_id DESC";
 
-        return array_values(array_filter($_SESSION['fra_list'], fn($fra) =>
-            $fra['fundraiserId'] === $fundraiserId &&
-            (
-                $keyword === '' ||
-                stripos($fra['title'], $keyword) !== false ||
-                stripos($fra['description'], $keyword) !== false ||
-                stripos($fra['category'], $keyword) !== false
-            )
-        ));
+        $searchKeyword = '%' . $keyword . '%';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fundraiserId', $fundraiserId, PDO::PARAM_INT);
+        $stmt->bindParam(':keyword', $searchKeyword);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function searchAllFRA(string $keyword): array
     {
-        $this->initialiseData();
+        $sql = "SELECT 
+                    fra_id AS fraId,
+                    fundraiser_id AS fundraiserId,
+                    title,
+                    description,
+                    goal_amount AS goalAmount,
+                    current_amount AS amountRaised,
+                    category,
+                    status,
+                    start_date AS startDate,
+                    end_date AS endDate,
+                    view_count AS views,
+                    shortlist_count AS shortlistCount
+                FROM fundraising_activities
+                WHERE status = 'Active'
+                AND (
+                    title LIKE :keyword
+                    OR description LIKE :keyword
+                    OR category LIKE :keyword
+                )
+                ORDER BY fra_id DESC";
 
-        return array_values(array_filter($_SESSION['fra_list'], fn($fra) =>
-            $fra['status'] === 'Active' &&
-            (
-                $keyword === '' ||
-                stripos($fra['title'], $keyword) !== false ||
-                stripos($fra['description'], $keyword) !== false ||
-                stripos($fra['category'], $keyword) !== false
-            )
-        ));
+        $searchKeyword = '%' . $keyword . '%';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':keyword', $searchKeyword);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function viewShortlistCount(int $fraId): int
     {
-        $this->initialiseData();
+        $sql = "SELECT shortlist_count
+                FROM fundraising_activities
+                WHERE fra_id = :fraId
+                LIMIT 1";
 
-        foreach ($_SESSION['fra_list'] as $fra) {
-            if ($fra['fraId'] === $fraId) {
-                return $fra['shortlistCount'] ?? 0;
-            }
-        }
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fraId', $fraId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return 0;
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $result ? (int)$result['shortlist_count'] : 0;
     }
 
     public function increaseShortlistCount(int $fraId): void
     {
-        $this->initialiseData();
+        $sql = "UPDATE fundraising_activities
+                SET shortlist_count = shortlist_count + 1
+                WHERE fra_id = :fraId";
 
-        foreach ($_SESSION['fra_list'] as &$fra) {
-            if ($fra['fraId'] === $fraId) {
-                $fra['shortlistCount'] = ($fra['shortlistCount'] ?? 0) + 1;
-                return;
-            }
-        }
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fraId', $fraId, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    private function increaseViewCount(int $fraId): void
+    {
+        $sql = "UPDATE fundraising_activities
+                SET view_count = view_count + 1
+                WHERE fra_id = :fraId";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fraId', $fraId, PDO::PARAM_INT);
+        $stmt->execute();
     }
 
     public function getCompletedFRA(int $fundraiserId): array
     {
-        $this->initialiseData();
+        $sql = "SELECT 
+                    fra_id AS fraId,
+                    fundraiser_id AS fundraiserId,
+                    title,
+                    description,
+                    goal_amount AS goalAmount,
+                    current_amount AS amountRaised,
+                    category,
+                    status,
+                    start_date AS startDate,
+                    end_date AS endDate,
+                    view_count AS views,
+                    shortlist_count AS shortlistCount
+                FROM fundraising_activities
+                WHERE fundraiser_id = :fundraiserId
+                AND status = 'Completed'
+                ORDER BY end_date DESC";
 
-        return array_values(array_filter($_SESSION['fra_list'], fn($fra) =>
-            $fra['fundraiserId'] === $fundraiserId &&
-            $fra['status'] === 'Completed'
-        ));
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fundraiserId', $fundraiserId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function searchCompletedFRA(int $fundraiserId, string $keyword): array
     {
-        return array_values(array_filter($this->getCompletedFRA($fundraiserId), fn($fra) =>
-            $keyword === '' ||
-            stripos($fra['title'], $keyword) !== false ||
-            stripos($fra['description'], $keyword) !== false ||
-            stripos($fra['category'], $keyword) !== false
-        ));
+        $sql = "SELECT 
+                    fra_id AS fraId,
+                    fundraiser_id AS fundraiserId,
+                    title,
+                    description,
+                    goal_amount AS goalAmount,
+                    current_amount AS amountRaised,
+                    category,
+                    status,
+                    start_date AS startDate,
+                    end_date AS endDate,
+                    view_count AS views,
+                    shortlist_count AS shortlistCount
+                FROM fundraising_activities
+                WHERE fundraiser_id = :fundraiserId
+                AND status = 'Completed'
+                AND (
+                    title LIKE :keyword
+                    OR description LIKE :keyword
+                    OR category LIKE :keyword
+                )
+                ORDER BY end_date DESC";
+
+        $searchKeyword = '%' . $keyword . '%';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':fundraiserId', $fundraiserId, PDO::PARAM_INT);
+        $stmt->bindParam(':keyword', $searchKeyword);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

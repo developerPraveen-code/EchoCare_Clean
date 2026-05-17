@@ -4,12 +4,12 @@
 // BCE Role: Boundary
 // Allows Platform Manager to create a new FRA category.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 
 $userSession = new UserSession();
 $userSession->requireLogin();
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/CreateFRACategoryController.php';
 
 $userSession = new UserSession();

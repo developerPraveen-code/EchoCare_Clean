@@ -2,43 +2,55 @@
 
 // USER STORY #45: Generate Weekly Report
 // BCE Role: Entity
-// Generates weekly fundraising performance report.
+// Entity only reads report data from database. No $_SESSION is used here.
+
+require_once __DIR__ . '/../../shared/database/Database.php';
 
 class WeeklyReport
 {
+    private PDO $conn;
+
+    public function __construct()
+    {
+        $database = new Database();
+        $this->conn = $database->connect();
+    }
+
     public function generateWeeklyReport(string $startDate, string $endDate): array
     {
-        $fraList = $_SESSION['fra_list'] ?? [];
-        $donationList = $_SESSION['donation_list'] ?? [];
+        $donationSql = "SELECT 
+                            COALESCE(SUM(amount), 0) AS totalFundsRaised,
+                            COUNT(*) AS totalDonations,
+                            COUNT(*) AS totalTransactions
+                        FROM donations
+                        WHERE donation_date BETWEEN :startDate AND :endDate";
 
-        $totalFundsRaised = 0;
-        $totalDonations = 0;
-        $totalTransactions = 0;
-        $completedFRA = 0;
+        $donationStmt = $this->conn->prepare($donationSql);
+        $donationStmt->bindParam(':startDate', $startDate);
+        $donationStmt->bindParam(':endDate', $endDate);
+        $donationStmt->execute();
 
-        foreach ($donationList as $donation) {
-            $donationDate = $donation['donationDate'] ?? '';
+        $donationData = $donationStmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($donationDate >= $startDate && $donationDate <= $endDate) {
-                $totalFundsRaised += $donation['amount'] ?? 0;
-                $totalDonations++;
-                $totalTransactions++;
-            }
-        }
+        $fraSql = "SELECT COUNT(*) AS completedFRA
+                   FROM fundraising_activities
+                   WHERE status = 'Completed'
+                   AND end_date BETWEEN :startDate AND :endDate";
 
-        foreach ($fraList as $fra) {
-            if (($fra['status'] ?? '') === 'Completed') {
-                $completedFRA++;
-            }
-        }
+        $fraStmt = $this->conn->prepare($fraSql);
+        $fraStmt->bindParam(':startDate', $startDate);
+        $fraStmt->bindParam(':endDate', $endDate);
+        $fraStmt->execute();
+
+        $fraData = $fraStmt->fetch(PDO::FETCH_ASSOC);
 
         return [
             'startDate' => $startDate,
             'endDate' => $endDate,
-            'totalFundsRaised' => $totalFundsRaised,
-            'totalDonations' => $totalDonations,
-            'totalTransactions' => $totalTransactions,
-            'completedFRA' => $completedFRA
+            'totalFundsRaised' => (float) $donationData['totalFundsRaised'],
+            'totalDonations' => (int) $donationData['totalDonations'],
+            'totalTransactions' => (int) $donationData['totalTransactions'],
+            'completedFRA' => (int) $fraData['completedFRA']
         ];
     }
 }

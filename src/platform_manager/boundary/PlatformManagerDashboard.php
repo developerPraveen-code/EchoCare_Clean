@@ -2,9 +2,8 @@
 
 // USER STORY #41: Platform Manager Login
 // Boundary: PlatformManagerDashboard displays the landing page after successful Platform Manager login.
-// Links to Sprint 3 category functions and Sprint 4 monthly report.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 
 $userSession = new UserSession();
 $userSession->requireLogin();
@@ -16,8 +15,8 @@ if ($user['role'] !== 'platform_manager') {
     exit();
 }
 
-$totalFRA = isset($_SESSION['fra_list']) ? count($_SESSION['fra_list']) : 0;
-$totalCategories = isset($_SESSION['fra_category_list']) ? count($_SESSION['fra_category_list']) : 3;
+$totalFRA = 0;
+$totalCategories = 3;
 ?>
 
 <!DOCTYPE html>
@@ -53,45 +52,25 @@ $totalCategories = isset($_SESSION['fra_category_list']) ? count($_SESSION['fra_
                     ▣ View Categories
                 </a>
 
+                <a href="/index.php?page=search_category" class="sidebar-link">
+                    🔍 Search Category
+                </a>
+
                 <a href="/index.php?page=monthly_report" class="sidebar-link">
                     📊 Monthly Report
+                </a>
+
+                <a href="/index.php?page=daily_report" class="sidebar-link">
+                    📅 Daily Report
+                </a>
+
+                <a href="/index.php?page=weekly_report" class="sidebar-link">
+                    📈 Weekly Report
                 </a>
 
                 <a href="/index.php?page=logout" class="sidebar-link">
                     ⎋ Logout
                 </a>
-
-                <a href="/index.php?page=platform_manager_dashboard" class="sidebar-link active">
-        ▦ Overview
-    </a>
-
-    <a href="/index.php?page=create_fra_category" class="sidebar-create-btn">
-        + New Category
-    </a>
-
-    <a href="/index.php?page=view_category" class="sidebar-link">
-        ▣ View Categories
-    </a>
-
-    <a href="/index.php?page=search_category" class="sidebar-link">
-        🔍 Search Category
-    </a>
-
-    <a href="/index.php?page=monthly_report" class="sidebar-link">
-        📊 Monthly Report
-    </a>
-
-    <a href="/index.php?page=daily_report" class="sidebar-link">
-        📅 Daily Report
-    </a>
-
-    <a href="/index.php?page=weekly_report" class="sidebar-link">
-        📈 Weekly Report
-    </a>
-
-    <a href="/index.php?page=logout" class="sidebar-link">
-        ⎋ Logout
-    </a>
 
             </nav>
         </div>
@@ -140,8 +119,8 @@ $totalCategories = isset($_SESSION['fra_category_list']) ? count($_SESSION['fra_
 
                 <div class="stat-card purple">
                     <p>Reports</p>
-                    <h3>1</h3>
-                    <span>Monthly report available</span>
+                    <h3>3</h3>
+                    <span>Daily, weekly, monthly reports</span>
                 </div>
 
                 <div class="stat-card yellow">

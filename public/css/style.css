@@ -484,3 +484,55 @@ textarea:focus {
 .sidebar-create-btn:hover {
     background: #16a34a;
 }
+
+/* =========================================
+   Animated Background
+========================================= */
+
+/* Strong animated wavy background */
+body {
+    position: relative;
+    overflow-x: hidden;
+    background: #eef3ff;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(
+        120deg,
+        #d8e2ff,
+        #cbb7ff,
+        #f3e8ff,
+        #dbeafe
+    );
+    background-size: 400% 400%;
+    animation: movingGradient 4s ease infinite;
+}
+
+@keyframes movingGradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.page-center,
+.app-layout {
+    position: relative;
+    z-index: 1;
+}
+
+.main-content,
+.dashboard-bg {
+    background: transparent !important;
+}

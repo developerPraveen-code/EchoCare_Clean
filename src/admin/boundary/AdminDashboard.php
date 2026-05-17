@@ -2,9 +2,8 @@
 
 // USER STORY #11: User Admin Login
 // Boundary: AdminDashboard displays the landing page after successful User Admin login.
-// Links to Sprint 4 User Admin functions.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 
 $userSession = new UserSession();
 $userSession->requireLogin();
@@ -16,8 +15,8 @@ if ($user['role'] !== 'user_admin') {
     exit();
 }
 
-$totalProfiles = isset($_SESSION['user_profiles']) ? count($_SESSION['user_profiles']) : 2;
-$totalAccounts = isset($_SESSION['managed_user_accounts']) ? count($_SESSION['managed_user_accounts']) : 4;
+$totalProfiles = 2;
+$totalAccounts = 4;
 ?>
 
 <!DOCTYPE html>
@@ -53,12 +52,20 @@ $totalAccounts = isset($_SESSION['managed_user_accounts']) ? count($_SESSION['ma
                     ▣ View Accounts
                 </a>
 
+                <a href="/index.php?page=search_user_account" class="sidebar-link">
+                    🔍 Search Account
+                </a>
+
                 <a href="/index.php?page=create_user_profile" class="sidebar-link">
                     + Create Profile
                 </a>
 
                 <a href="/index.php?page=view_user_profiles" class="sidebar-link">
                     👤 View Profiles
+                </a>
+
+                <a href="/index.php?page=search_user_profile" class="sidebar-link">
+                    🔍 Search Profiles
                 </a>
 
                 <a href="/index.php?page=logout" class="sidebar-link">
@@ -139,3 +146,4 @@ $totalAccounts = isset($_SESSION['managed_user_accounts']) ? count($_SESSION['ma
 
 </body>
 </html>
+

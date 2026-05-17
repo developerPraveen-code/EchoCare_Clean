@@ -33,8 +33,11 @@ $emailValue = $_POST['email'] ?? '';
     <section class="login-card">
 
         <div class="logo-pill">
-            <div class="logo-circle"></div>
-            <span>EchoCare</span>
+            <img
+                src="/images/echocare-logo.png"
+                alt="EchoCare Logo"
+                class="login-logo-full"
+            >
         </div>
 
         <h1>Sign in</h1>
@@ -57,10 +60,22 @@ $emailValue = $_POST['email'] ?? '';
                     <option value="" disabled <?= $selectedRole === '' ? 'selected' : '' ?>>
                         Select account type...
                     </option>
-                    <option value="user_admin">User Admin</option>
-                    <option value="donee">Donee</option>
-                    <option value="fundraiser">Fundraiser</option>
-                    <option value="platform_manager">Platform Manager</option>
+
+                    <option value="user_admin" <?= $selectedRole === 'user_admin' ? 'selected' : '' ?>>
+                        User Admin
+                    </option>
+
+                    <option value="donee" <?= $selectedRole === 'donee' ? 'selected' : '' ?>>
+                        Donee
+                    </option>
+
+                    <option value="fundraiser" <?= $selectedRole === 'fundraiser' ? 'selected' : '' ?>>
+                        Fundraiser
+                    </option>
+
+                    <option value="platform_manager" <?= $selectedRole === 'platform_manager' ? 'selected' : '' ?>>
+                        Platform Manager
+                    </option>
                 </select>
             </div>
 

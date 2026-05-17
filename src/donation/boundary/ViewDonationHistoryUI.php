@@ -4,7 +4,7 @@
 // BCE Role: Boundary
 // Displays all donation history records for the logged-in donee.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/ViewDonationHistoryController.php';
 
 $userSession = new UserSession();

@@ -4,7 +4,8 @@
 // USER STORY #26: Donee Logout
 // USER STORY #31: Fundraiser Logout
 // USER STORY #43: Platform Manager Logout
-// Entity: UserSession manages logged-in user session data.
+// BCE Role: Boundary
+// Boundary handles session and login validation.
 
 class UserSession
 {
@@ -35,5 +36,20 @@ class UserSession
             header('Location: /index.php?page=login');
             exit();
         }
+    }
+
+    public function getUser(): ?array
+    {
+        return $_SESSION['user'] ?? null;
+    }
+
+    public function getUserId(): ?int
+    {
+        return $_SESSION['user']['id'] ?? null;
+    }
+
+    public function getUserRole(): ?string
+    {
+        return $_SESSION['user']['role'] ?? null;
     }
 }

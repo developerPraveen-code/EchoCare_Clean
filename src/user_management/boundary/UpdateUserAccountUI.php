@@ -3,7 +3,7 @@
 // USER STORY #8: Update User Account
 // BCE Role: Boundary
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/UpdateUserAccountController.php';
 
 $userSession = new UserSession();

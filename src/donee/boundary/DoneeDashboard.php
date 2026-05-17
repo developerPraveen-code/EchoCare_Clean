@@ -4,7 +4,7 @@
 // Boundary: DoneeDashboard displays landing page after successful Donee login.
 // Links to Sprint 2 and Sprint 3 Donee functionalities.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 
 $userSession = new UserSession();
 $userSession->requireLogin();
@@ -122,9 +122,9 @@ $totalDonations = isset($_SESSION['donation_list']) ? count($_SESSION['donation_
                 </div>
 
                 <div class="stat-card yellow">
-                    <p>Progress Tracked</p>
+                    <p>Giving Progress</p>
                     <h3>0</h3>
-                    <span>Coming in later sprint</span>
+                    <span>Track your donation impact</span>
                 </div>
 
             </div>

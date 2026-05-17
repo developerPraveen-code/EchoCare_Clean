@@ -4,7 +4,7 @@
 // BCE Role: Boundary
 // Allows Fundraiser to search completed FRA history.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/SearchHistoryController.php';
 
 $userSession = new UserSession();

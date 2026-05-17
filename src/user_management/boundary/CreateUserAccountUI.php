@@ -3,7 +3,7 @@
 // USER STORY: Create User Account
 // BCE Role: Boundary
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/CreateUserAccountController.php';
 
 $userSession = new UserSession();

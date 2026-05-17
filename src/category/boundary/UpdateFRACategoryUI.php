@@ -3,7 +3,7 @@
 // USER STORY #38: Update FRA Category
 // BCE Role: Boundary
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/UpdateFRACategoryController.php';
 
 $userSession = new UserSession();

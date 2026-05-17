@@ -4,128 +4,176 @@
 // USER STORY #7: View User Accounts
 // USER STORY #8: Update User Account
 // USER STORY #9: Suspend User Account
+// USER STORY #10: Search User Account
 // BCE Role: Entity
+
+require_once __DIR__ . '/../../shared/database/Database.php';
 
 class ManagedUserAccount
 {
-    public function initialiseData(): void
+    private PDO $conn;
+
+    public function __construct()
     {
-        if (!isset($_SESSION['managed_user_accounts'])) {
-            $_SESSION['managed_user_accounts'] = [
-                [
-                    'userId' => 1,
-                    'username' => 'System Admin',
-                    'email' => 'admin@echocare.com',
-                    'role' => 'user_admin',
-                    'permission' => 'Full Access',
-                    'status' => 'Active'
-                ],
-                [
-                    'userId' => 2,
-                    'username' => 'Donee User',
-                    'email' => 'donee@echocare.com',
-                    'role' => 'donee',
-                    'permission' => 'Donation Access',
-                    'status' => 'Active'
-                ],
-                [
-                    'userId' => 3,
-                    'username' => 'Fundraiser User',
-                    'email' => 'fundraiser@echocare.com',
-                    'role' => 'fundraiser',
-                    'permission' => 'Campaign Access',
-                    'status' => 'Active'
-                ],
-                [
-                    'userId' => 4,
-                    'username' => 'Platform Manager',
-                    'email' => 'pm@echocare.com',
-                    'role' => 'platform_manager',
-                    'permission' => 'Platform Access',
-                    'status' => 'Active'
-                ]
-            ];
-        }
+        $database = new Database();
+        $this->conn = $database->connect();
     }
 
-    // USER STORY #6: Create User Account
+    // USER STORY #6
     public function createAccount(string $username, string $email, string $role): string
     {
-        $this->initialiseData();
+        $permission = $this->defaultPermission($role);
 
-        $newId = count($_SESSION['managed_user_accounts']) + 1;
+        $sql = "INSERT INTO managed_user_accounts
+                    (username,email,role,permission,status)
+                VALUES
+                    (:username,:email,:role,:permission,'Active')";
 
-        $_SESSION['managed_user_accounts'][] = [
-            'userId' => $newId,
-            'username' => $username,
-            'email' => $email,
-            'role' => $role,
-            'permission' => $this->defaultPermission($role),
-            'status' => 'Active'
-        ];
+        $stmt = $this->conn->prepare($sql);
 
-        return 'User account created successfully.';
+        $stmt->bindParam(':username',$username);
+        $stmt->bindParam(':email',$email);
+        $stmt->bindParam(':role',$role);
+        $stmt->bindParam(':permission',$permission);
+
+        return $stmt->execute()
+            ? 'User account created successfully.'
+            : 'User account creation failed.';
     }
 
-    // USER STORY #7: View User Accounts
+    // USER STORY #7
     public function getAllAccounts(): array
     {
-        $this->initialiseData();
-        return $_SESSION['managed_user_accounts'];
+        $sql = "SELECT
+                    user_id AS userId,
+                    username,
+                    email,
+                    role,
+                    permission,
+                    status
+                FROM managed_user_accounts
+                ORDER BY user_id";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // USER STORY #8: Update User Account
+    // USER STORY #10
+    public function searchUserAccount(string $username): array
+    {
+        $sql = "SELECT
+                    user_id AS userId,
+                    username,
+                    email,
+                    role,
+                    permission,
+                    status
+                FROM managed_user_accounts
+                WHERE username LIKE :username";
+
+        $search = "%".$username."%";
+
+        $stmt = $this->conn->prepare($sql);
+
+        $stmt->bindParam(':username',$search);
+
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // USER STORY #8
     public function getAccount(int $userId): ?array
     {
-        $this->initialiseData();
+        $sql = "SELECT
+                    user_id AS userId,
+                    username,
+                    email,
+                    role,
+                    permission,
+                    status
+                FROM managed_user_accounts
+                WHERE user_id=:userId";
 
-        foreach ($_SESSION['managed_user_accounts'] as $account) {
-            if ($account['userId'] === $userId) {
-                return $account;
-            }
-        }
+        $stmt=$this->conn->prepare($sql);
 
-        return null;
+        $stmt->bindParam(
+            ':userId',
+            $userId,
+            PDO::PARAM_INT
+        );
+
+        $stmt->execute();
+
+        $account=$stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $account ?: null;
     }
 
-    // USER STORY #8: Update User Account
-    public function updateUserAccount(int $userId, string $permission): string
+    // USER STORY #8
+    public function updateUserAccount(
+        int $userId,
+        string $permission
+    ): string
     {
-        $this->initialiseData();
+        $sql="UPDATE managed_user_accounts
+              SET permission=:permission
+              WHERE user_id=:userId";
 
-        foreach ($_SESSION['managed_user_accounts'] as &$account) {
-            if ($account['userId'] === $userId) {
-                $account['permission'] = $permission;
-                return 'User account updated successfully.';
-            }
-        }
+        $stmt=$this->conn->prepare($sql);
 
-        return 'Update failed. User account not found.';
+        $stmt->bindParam(
+            ':permission',
+            $permission
+        );
+
+        $stmt->bindParam(
+            ':userId',
+            $userId,
+            PDO::PARAM_INT
+        );
+
+        return $stmt->execute()
+            ? 'User account updated successfully.'
+            : 'Update failed.';
     }
 
-    // USER STORY #9: Suspend User Account
-    public function suspendAccount(int $userId): string
+    // USER STORY #9
+    public function suspendAccount(
+        int $userId
+    ): string
     {
-        $this->initialiseData();
+        $sql="UPDATE managed_user_accounts
+              SET status='Suspended'
+              WHERE user_id=:userId";
 
-        foreach ($_SESSION['managed_user_accounts'] as &$account) {
-            if ($account['userId'] === $userId) {
-                $account['status'] = 'Suspended';
-                return 'User account suspended successfully.';
-            }
-        }
+        $stmt=$this->conn->prepare($sql);
 
-        return 'User account not found.';
+        $stmt->bindParam(
+            ':userId',
+            $userId,
+            PDO::PARAM_INT
+        );
+
+        return $stmt->execute()
+            ? 'User account suspended successfully.'
+            : 'Suspend failed.';
     }
 
-    private function defaultPermission(string $role): string
+    private function defaultPermission(
+        string $role
+    ): string
     {
-        return match ($role) {
-            'user_admin' => 'Full Access',
-            'donee' => 'Donation Access',
-            'fundraiser' => 'Campaign Access',
-            'platform_manager' => 'Platform Access',
-            default => 'Basic Access'
+        return match($role){
+
+            'user_admin'=>'Full Access',
+            'donee'=>'Donation Access',
+            'fundraiser'=>'Campaign Access',
+            'platform_manager'=>'Platform Access',
+
+            default=>'Basic Access'
         };
     }
 }

@@ -5,7 +5,7 @@
 // USER STORY #9: Suspend User Account
 // BCE Role: Boundary
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/ViewUserAccountsController.php';
 
 $userSession = new UserSession();

@@ -6,7 +6,7 @@
 // USER STORY #43: Platform Manager Logout
 // Controller: LogoutController handles the logout request and asks UserSession to destroy the session.
 
-require_once __DIR__ . '/../entity/UserSession.php';
+require_once __DIR__ . '/../boundary/UserSession.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();

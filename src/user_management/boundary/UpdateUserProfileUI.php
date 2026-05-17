@@ -3,7 +3,7 @@
 // USER STORY: Update User Profile
 // BCE Role: Boundary
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/ViewUserProfileController.php';
 require_once __DIR__ . '/../controller/UpdateUserProfileController.php';
 

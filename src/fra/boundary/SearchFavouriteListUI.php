@@ -4,7 +4,7 @@
 // BCE Role: Boundary
 // Allows Donee to search within saved/favourite FRA list.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/SearchFavouriteListController.php';
 
 $userSession = new UserSession();

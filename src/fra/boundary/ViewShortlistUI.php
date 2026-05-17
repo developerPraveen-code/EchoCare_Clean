@@ -4,7 +4,7 @@
 // BCE Role: Boundary
 // Allows Fundraiser to view how many times an FRA has been shortlisted/saved.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../controller/ViewFRAController.php';
 
 $userSession = new UserSession();

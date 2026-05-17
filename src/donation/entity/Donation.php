@@ -5,55 +5,68 @@
 // BCE Role: Entity
 // Stores and retrieves donee donation history records.
 
+require_once __DIR__ . '/../../shared/database/Database.php';
+
 class Donation
 {
-    public function initialiseData(): void
+    private PDO $conn;
+
+    public function __construct()
     {
-        if (!isset($_SESSION['donation_list'])) {
-            $_SESSION['donation_list'] = [
-                [
-                    'donationId' => 1,
-                    'doneeId' => 2,
-                    'fraTitle' => 'School Supplies Donation Drive',
-                    'category' => 'Education',
-                    'amount' => 50.00,
-                    'donationDate' => '2026-05-01',
-                    'status' => 'Completed'
-                ],
-                [
-                    'donationId' => 2,
-                    'doneeId' => 2,
-                    'fraTitle' => 'Community Meal Support',
-                    'category' => 'Food Support',
-                    'amount' => 30.00,
-                    'donationDate' => '2026-05-05',
-                    'status' => 'Completed'
-                ]
-            ];
-        }
+        $database = new Database();
+        $this->conn = $database->connect();
     }
 
     // USER STORY #35: View Donation History
     public function getDonationHistory(int $doneeId): array
     {
-        $this->initialiseData();
+        $sql = "SELECT 
+                    donation_id AS donationId,
+                    donee_id AS doneeId,
+                    fra_title AS fraTitle,
+                    category,
+                    amount,
+                    donation_date AS donationDate,
+                    status
+                FROM donations
+                WHERE donee_id = :doneeId
+                ORDER BY donation_date DESC";
 
-        return array_values(array_filter($_SESSION['donation_list'], function ($donation) use ($doneeId) {
-            return $donation['doneeId'] === $doneeId;
-        }));
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':doneeId', $doneeId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // USER STORY #34: Search Donation History
     public function searchDonationHistory(int $doneeId, string $keyword): array
     {
-        $history = $this->getDonationHistory($doneeId);
+        $sql = "SELECT 
+                    donation_id AS donationId,
+                    donee_id AS doneeId,
+                    fra_title AS fraTitle,
+                    category,
+                    amount,
+                    donation_date AS donationDate,
+                    status
+                FROM donations
+                WHERE donee_id = :doneeId
+                AND (
+                    fra_title LIKE :keyword
+                    OR category LIKE :keyword
+                    OR status LIKE :keyword
+                    OR donation_date LIKE :keyword
+                )
+                ORDER BY donation_date DESC";
 
-        return array_values(array_filter($history, function ($donation) use ($keyword) {
-            return $keyword === '' ||
-                stripos($donation['fraTitle'], $keyword) !== false ||
-                stripos($donation['category'], $keyword) !== false ||
-                stripos($donation['status'], $keyword) !== false ||
-                stripos($donation['donationDate'], $keyword) !== false;
-        }));
+        $searchKeyword = '%' . $keyword . '%';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':doneeId', $doneeId, PDO::PARAM_INT);
+        $stmt->bindParam(':keyword', $searchKeyword);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

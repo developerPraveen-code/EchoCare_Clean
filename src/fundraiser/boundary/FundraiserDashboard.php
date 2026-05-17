@@ -4,7 +4,7 @@
 // Boundary: FundraiserDashboard displays the landing page after successful Fundraiser login.
 // Links to Sprint 2 and Sprint 3 Fundraiser functionalities.
 
-require_once __DIR__ . '/../../login/entity/UserSession.php';
+require_once __DIR__ . '/../../login/boundary/UserSession.php';
 require_once __DIR__ . '/../../fra/controller/ViewFRAController.php';
 
 $userSession = new UserSession();
